@@ -1,18 +1,28 @@
-# StopBet
+# StopBet — Mitigación Digital de la Ludopatía
 
-Plataforma clínica digital para el tratamiento de la ludopatía, desarrollada en colaboración con AJUTER. Combina intervenciones terapéuticas estructuradas, un asistente IA con límites clínicos validados, y un motor JITAI (Just-In-Time Adaptive Interventions) para contención proactiva en momentos de crisis.
+Proyecto de la **Feria de Software UTFSM 2026** desarrollado por el Grupo 4 en colaboración con [AJUTER](https://ajuter.cl) (Asociación de Jugadores en Rehabilitación).
+
+StopBet es una plataforma clínica digital que acompaña a pacientes con ludopatía durante todo su proceso de rehabilitación. A diferencia de los bloqueadores restrictivos, combina un motor de **Intervenciones Adaptativas Justo a Tiempo (JITAI)**, un **asistente virtual con IA** con límites clínicos validados por AJUTER, y un **dashboard clínico** que centraliza la gestión terapéutica, reduciendo la carga administrativa de los psicólogos y garantizando contención 24/7 al paciente.
+
+**Líderes:** Alex Domínguez (Product Owner) · José Meza (Scrum Master)  
+**Equipo:** Matías Lara · Catalina Yañez · Eduardo Pacheco · Matias Barraza  
+**Campus:** Casa Central, Universidad Técnica Federico Santa María
+
+---
 
 ## Estructura del monorepo
 
 ```
 StopBet/
 ├── apps/
-│   ├── web/        → Dashboard web del terapeuta (React + Vite + Tailwind)
-│   ├── backend/    → API REST clínica (NestJS + PostgreSQL + LangChain.js)
-│   └── mobile/     → App del paciente Android/iOS (React Native CLI)
+│   ├── web/          → Dashboard web del terapeuta (React + Vite + Tailwind)
+│   ├── backend/      → API REST clínica (NestJS + PostgreSQL + LangChain.js)
+│   └── mobile/       → App del paciente Android/iOS (React Native CLI)
 └── packages/
-    └── shared-types/ → Tipos TypeScript compartidos
+    └── shared-types/ → Tipos TypeScript compartidos entre backend y web
 ```
+
+---
 
 ## Stack tecnológico
 
@@ -26,57 +36,160 @@ StopBet/
 | Dashboard Web | React + Vite + TypeScript + Tailwind CSS + Recharts |
 | Infraestructura | Railway + Vercel + Cloudflare R2 |
 
-## Despliegue
-
-| Servicio | Plataforma | URL |
-|---------|-----------|-----|
-| Dashboard web | Vercel | (configurar en Vercel) |
-| Backend API | Railway | (configurar en Railway) |
-| Base de datos | Railway (PostgreSQL) | (automático con backend) |
-| Archivos | Cloudflare R2 | (configurar bucket) |
+---
 
 ## Levantamiento local
 
-### Requisitos
+### Requisitos previos
 
-- Node.js >= 20
-- npm >= 10
-- PostgreSQL (local o Docker)
+Asegúrate de tener instalado lo siguiente antes de comenzar:
 
-### Instalación
+| Herramienta | Versión mínima | Verificar con |
+|-------------|---------------|---------------|
+| Node.js | 20.x | `node -v` |
+| npm | 10.x | `npm -v` |
+| Git | cualquiera | `git --version` |
+| PostgreSQL | 15.x | `psql --version` |
+
+> Para el desarrollo **mobile** se necesita además Android Studio con SDK configurado. Ver sección [Mobile](#mobile).
+
+---
+
+### 1. Clonar el repositorio
 
 ```bash
-# Instalar dependencias de todos los workspaces
-npm install
+git clone https://github.com/holyusm/StopBet.git
+cd StopBet
+```
 
-# Copiar variables de entorno
+---
+
+### 2. Instalar dependencias
+
+Desde la **raíz** del monorepo instala todos los workspaces de una sola vez:
+
+```bash
+npm install
+```
+
+---
+
+### 3. Configurar variables de entorno
+
+Copia los archivos de ejemplo y edítalos con tus valores locales:
+
+```bash
+# Backend
 cp apps/backend/.env.example apps/backend/.env
+
+# Web
 cp apps/web/.env.example apps/web/.env
 ```
 
-### Desarrollo
+#### `apps/backend/.env`
+
+```env
+PORT=3000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stopbet
+CORS_ORIGIN=http://localhost:5173
+JWT_SECRET=cualquier_string_largo_para_desarrollo
+GEMINI_API_KEY=tu_api_key_de_google_ai_studio
+```
+
+> Obtén tu `GEMINI_API_KEY` gratis en [Google AI Studio](https://aistudio.google.com).
+
+#### `apps/web/.env`
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+---
+
+### 4. Crear la base de datos
+
+Conéctate a PostgreSQL y crea la base de datos local:
 
 ```bash
-# Dashboard web (http://localhost:5173)
-npm run web
-
-# Backend API (http://localhost:3000)
-npm run backend
-
-# Documentación Swagger (cuando el backend esté corriendo)
-# http://localhost:3000/api/docs
+psql -U postgres -c "CREATE DATABASE stopbet;"
 ```
+
+> Si usas Docker puedes levantarla con:
+> ```bash
+> docker run --name stopbet-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=stopbet -p 5432:5432 -d postgres:15
+> ```
+
+---
+
+### 5. Levantar los servicios
+
+Abre **dos terminales** en la raíz del proyecto:
+
+**Terminal 1 — Backend API:**
+
+```bash
+npm run backend
+```
+
+Disponible en: `http://localhost:3000`  
+Swagger (documentación de la API): `http://localhost:3000/api/docs`
+
+**Terminal 2 — Dashboard Web:**
+
+```bash
+npm run web
+```
+
+Disponible en: `http://localhost:5173`
+
+---
 
 ### Mobile
 
-Ver instrucciones en [apps/mobile/README.md](apps/mobile/README.md).
+> El desarrollo mobile requiere configuración adicional de herramientas nativas. Ver instrucciones completas en [apps/mobile/README.md](apps/mobile/README.md).
 
-## Flujo de trabajo
+**Requisitos adicionales:**
 
-- Sprints gestionados en **Jira** (vincular historias de usuario antes de cada sprint)
-- Ramas: `feature/HU-XXX-descripcion`, `fix/HU-XXX-descripcion`
-- Pull Requests requieren revisión de al menos 1 compañero
-- Main branch siempre debe estar desplegable
+| Herramienta | Uso |
+|-------------|-----|
+| JDK 17 | Compilación Android |
+| Android Studio | SDK Manager + emulador |
+| Variable `ANDROID_HOME` | Apunta al SDK de Android |
+| Variable `JAVA_HOME` | Apunta al JDK 17 |
+
+Una vez configurado el entorno nativo, desde `apps/mobile/`:
+
+```bash
+# Iniciar Metro Bundler
+npm run start
+
+# En otra terminal, lanzar en emulador Android
+npm run android
+```
+
+---
+
+## Despliegue en producción
+
+| Servicio | Plataforma | Configuración |
+|---------|-----------|--------------|
+| Dashboard web | Vercel | `vercel.json` en raíz |
+| Backend + DB | Railway | `apps/backend/railway.toml` |
+| Archivos (PDF, fotos) | Cloudflare R2 | API compatible S3 |
+
+Railway y Vercel se conectan automáticamente con GitHub y hacen deploy en cada push a `main`.  
+Las variables de entorno de producción se configuran en los dashboards de cada plataforma.
+
+---
+
+## Flujo de trabajo del equipo
+
+- Sprints gestionados en **Jira** — vincular historias antes de iniciar cada sprint
+- Ramas: `feature/HU-XXX-descripcion-corta` / `fix/HU-XXX-descripcion-corta`
+- Pull Requests requieren al menos **1 reviewer** antes de mergear a `main`
+- `main` siempre debe estar en estado desplegable
+
+---
 
 ## Roles del sistema
 
